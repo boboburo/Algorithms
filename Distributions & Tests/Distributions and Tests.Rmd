@@ -1,0 +1,199 @@
+---
+title: "Distributions"
+author: "Brian"
+date: "15 August 2015"
+output: html_document
+---
+
+<!--
+echo = show the code
+results = 'asis' or 'hide' or 'hold' - hold till the end
+messages: option message (FALSE hides messages in the output)
+warnings: option warning (FALSE hides warnings in the output)
+errors: option error (FALSE will make R stop if an error occurs; TRUE will show the error messages in the output)
+include = show the code-->
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=5, fig.height=3, fig.align ='center',
+                      fig.path='Figs/',
+                      echo=TRUE, warning=FALSE, message=FALSE,
+                      results='hold',
+                      include=TRUE,
+                      cache=TRUE)
+
+# If you run into problems with cached output you can always clear the knitr cache by removing the folder named with a _cache suffix within your document’s directory.
+
+```
+
+# r,d,q,p in R
+
+R comes with a rich set of probability distributions, and four consistent ways of accessing them: r, d, q, and p. If you combine these with the name of the distribution - rnorm(), dnorm(), qnorm(), and pnorm(), for example - you can generate random numbers, find the value of the function at a specific point, produce a critical value, and calculate a p-value. 
+
+### r
+When you want to generate random numbers, use the r prefix, as in rf() for the F distribution. Most distributions require one or more parameters to define the shape of the distribution. For the F distribution, you need the degrees of freedom for the numerator (df1) and the denominator (df2). To generate n=50 random numbers;
+
+```{r,echo=TRUE}
+rf(n=50, df1=15, df2=20)
+hist(rf(100000, df1=15, df2=20), breaks=100, col="gray", xlab="F", main="")
+```
+
+###d
+
+The d prefix, such as df(), is useful for finding the value of the F function, called its density, at any value of the statistic. Useful to look at the shape o fa curve also from a sequence.
+
+```{r,echo=TRUE}
+df(x=2.3, df1=15, df2=20)
+myF <- seq(from=0, to=6, by=0.01)
+dF <- df(x=myF, df1=15, df2=20)
+plot(myF, dF, type="l", lwd=3, col="blue")
+```
+
+### q
+
+The q prefix, as in qf(), is how you obtain critical values from a probability distribution. By default, R will integrate the probability starting from the left tail. If you want to get the probability starting from the right tail, be sure to set lower.tail=FALSE. 
+```{r,echo=TRUE}
+alpha = 0.05
+qf(p=alpha, df1=15, df2=20, lower.tail=FALSE)
+```
+
+p
+The p prefix, as in pf(), is how you calculate a p-value from a probability distribution. As for the q prefix, R will always integrate starting with the lower tail. If you want the right tail, specify lower.tail=FALSE. Specify the value of F for which you want a p-value, the degrees of freedom, and whether you want the left tail or the right tail.
+
+```{r}
+observedF = 3.7
+pf(q=observedF, , df1=15, df2=20, lower.tail=FALSE)
+```
+
+# Normal Distribution
+
+The normal distribution appears in many biological and other process. It is symetrical and is formed by the *central limit theorem* Many random effects will be approximately normally distributed. So peoples height, weight etc. 
+
+```{r norm1, fig.show='hold',,fig.width=10,echo=FALSE}
+library(UsingR)
+library(ggplot2)
+data<-babies
+
+#Create two plots one of the actual data, and one transpose to the Standard Normal N(0,1)
+#Using ggplot
+norm1a <- ggplot(data, aes(x=wt)) +
+  geom_histogram(colour = "darkgreen", fill = "white",aes(y = ..density..)) +
+  geom_density(colour="darkgreen")+geom_density(adjust=5,colour="red") +
+  xlab('Babies Weight')+ylab('density') 
+
+
+norm1a <- ggplot(data, aes(x=wt)) +
+  geom_histogram(colour = "darkgreen", fill = "white",aes(y = ..density..)) +
+  geom_density(colour="darkgreen")+geom_density(adjust=5,colour="red") +
+  xlab('Babies Weight')+ylab('density') +
+  ggtitle("Histogram of Babies Weights") 
+
+
+
+data$wtscale<-scale(data$wt,center=TRUE,scale=TRUE)
+
+#z score density - there probably is some function for this? 
+zdenz <- function (x) {
+ zd<-(1/sqrt(2*pi))*exp(-1*((x^2)/2))
+ return(zd)}
+
+norm1b<-ggplot(data, aes(x=wtscale)) +
+  geom_histogram(colour = "darkgreen", fill = "white",aes(y = ..density..)) +
+  geom_density(colour="darkgreen")+geom_density(adjust=5,colour="red") +
+  xlab('Babies Weight')+ylab('density') +
+  ggtitle("Histogram Scaled N(0,1) Babies Weights \n Z density is calculated") +
+  geom_segment(aes(x = -1, y = 0, xend = -1, yend = zdenz(-1)),lty=2,colour="blue")+
+  geom_segment(aes(x = 1, y = 0, xend = 1, yend = zdenz(1)),lty=2,colour="blue")+
+   geom_segment(aes(x = -2, y = 0, xend = -2, yend = zdenz(-2)),lty=2,lwd=2,colour="black")+
+  geom_segment(aes(x = 2, y = 0, xend = 2, yend = zdenz(2)),lty=2,lwd=2,colour="black")
+
+library(gridExtra)
+grid.arrange(norm1a, norm1b, ncol=2)
+
+
+
+```
+
+#Chi Squared Distribution
+
+If you sample from a normal distribution and sqaure the results you will get a $\chi^{2}$ distribution. More formally $X \sim \aleph(0,1)$. Depending on the number of samples that are taken, the degrees of freedom pushes the probablity density distribution to the right until it forms a normal distribution itself.  
+
+The distribution is additive. Therefore $\chi^2_1=X^2_1 \:and\: \chi^2_2=X^2_1+X^2_2$ etc. 
+
+
+```{r chi1, echo=FALSE,fig.show='hold'}
+
+#lets do in ggplot
+
+
+x <- rchisq(100, 5)
+hist(x,prob=TRUE,xlim=c(0,35),main="Chi Square Distribution")
+curve( dchisq(x, df=1), col='green', add=TRUE)
+curve( dchisq(x, df=2), col='red', add=TRUE)
+curve( dchisq(x, df=3), col='blue', add=TRUE)
+curve( dchisq(x, df=4), col='black', add=TRUE)
+curve( dchisq(x, df=5), col='darkgreen', add=TRUE)
+curve( dchisq(x, df=10), col='red', add=TRUE )
+
+
+#Function to sample from data Lets sample from
+chisamp<-function(degfree){
+take <- sample(unique(data$wtscale), degfree)
+take<-take^2
+take<-sum(take)
+return(take)}
+
+
+#data frame for the results
+chisampdf <- data.frame(z= numeric(0),degf= character(0))
+for (i in 1:5 ) {
+  results <- sapply(1:1000, function(x) { chisamp(i) + 1}) #apply the function chisamp 1000 times 
+  tempdf<-data.frame(z=results,degf=paste("df",i))
+  chisampdf<-rbind(chisampdf,tempdf)
+}  
+  
+chi1a<-ggplot(chisampdf, aes(z, fill = degf)) + geom_density(alpha = 0.2,adjust=5)
+chi1a<-chi1a+ggtitle("Chi Square Distribution of Babies Weight, smoothed")
+chi1a
+
+```
+
+#F Distribtuion
+
+If V 1 and V 2 are two independent random variables having the Chi-Squared distribution with m1 and m2 degrees of freedom respectively, then the following quantity follows an F distribution with m1 numerator degrees of freedom and m2 denominator degrees of freedom, i.e., (m1,m2) degrees of freedom.
+
+$$F = \frac{V1_{m1}}{V2_{m2}} \sim F_{(m1,m2)}$$
+
+Now on to the t-distribution and the F-distrution ratio test. 
+
+F and chi-squared statistics are really the same thing in that, after a normalization, chi-squared is the limiting distribution of the F as the denominator degrees of freedom goes to infinity. The normalization is chi-squared = (numerator degrees of freedom) * F. 
+
+```{r}
+
+qf(.95, df1=5, df2=2) 
+
+
+#F Distribution - right probability
+1-pf(2.05,df1=2,df2=71)
+1-pf(2.05,df1=2,df2=150)
+1-pf(2.05,df1=2,df2=1500)
+1-pf(2.05,df1=2,df2=15000)
+
+#Significant value 
+qf(0.95,df1=2,df2=71)
+qf(0.95,df1=2,df2=15000)
+
+
+1-pchisq(4.05, df=2) 
+
+qchisq(0.1287,df=2)
+
+1-pchisq(3,2)
+
+
+
+
+
+```
+
+
+
